@@ -7,9 +7,14 @@ import org.springframework.context.annotation.*;
 public class CsvConfigurer {
 
   @Bean
-  public CodecCustomizer myCustomCodecCustomizer(CsvEncoder csvEncoder) {
-    return configurer -> configurer.customCodecs()
-        .register(csvEncoder);
+  public CodecCustomizer myCustomCodecCustomizer(CsvEncoder csvEncoder, XlsxEncoder xlsxEncoder) {
+    return configurer -> {
+      configurer.customCodecs()
+          .register(csvEncoder);
+
+      configurer.customCodecs()
+          .register(xlsxEncoder);
+    };
   }
 
 }

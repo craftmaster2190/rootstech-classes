@@ -1,5 +1,6 @@
 package com.craftmaster2190.rootstechclasses;
 
+import com.craftmaster2190.rootstechclasses.config.*;
 import com.craftmaster2190.rootstechclasses.util.JsonUtils;
 import com.fasterxml.jackson.databind.*;
 import java.text.Normalizer;
@@ -8,7 +9,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.*;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpHeaders;
+import org.springframework.http.*;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
@@ -18,10 +19,6 @@ import static com.craftmaster2190.rootstechclasses.util.JsonUtils.streamElements
 @RestController
 @RequiredArgsConstructor
 public class RootstechClassesController {
-
-  @GetMapping("/health")
-  public void healthcheck() {
-  }
 
   public static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("EEE',' MMM d");
   public static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("h':'mm a");
@@ -35,6 +32,21 @@ public class RootstechClassesController {
         .findAny()
         .orElseThrow(() -> new IllegalStateException("No `" + stageTitle + "` stages.title element"))
         .get("calendarItems");
+  }
+
+  static String asciiOnly(String str) {
+    return Normalizer.normalize(str.replace((char) 0x2018, '\'')
+            .replace((char) 0x2019, '\''), Normalizer.Form.NFD)
+        .replaceAll("[^\\x00-\\x7F]", "");
+  }
+
+  static void addDownloadHeader(ServerHttpResponse serverResponse, String filename) {
+    serverResponse.getHeaders()
+        .add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=%s;".formatted(filename));
+  }
+
+  @GetMapping("/health")
+  public void healthcheck() {
   }
 
   @GetMapping("sessions-raw")
@@ -57,8 +69,10 @@ public class RootstechClassesController {
           JsonNode item = calendarItem.at("/item");
           return item == null || !item.isEmpty();
         })
-        .sorted(Comparator.<JsonNode>comparingLong(calendarItem -> calendarItem.at("/item/date").asLong())
-            .thenComparing(calendarItem -> calendarItem.at("/item/classroomName").asText()))
+        .sorted(Comparator.<JsonNode>comparingLong(calendarItem -> calendarItem.at("/item/date")
+                .asLong())
+            .thenComparing(calendarItem -> calendarItem.at("/item/classroomName")
+                .asText()))
         .map(calendarItem -> {
           var itemDateTime = Instant.ofEpochMilli(calendarItem.at("/item/date")
                   .asLong())
@@ -79,7 +93,7 @@ public class RootstechClassesController {
           var classroom = calendarItem.at("/item/classroomName")
               .asText(null);
           var location = calendarItem.at("/item/sessionLocation")
-              .asText();
+              .asText("");
 
           var availableForViewingAfterConference = location.contains("Online")
               || "Ballroom H".equals(classroom)
@@ -101,6 +115,7 @@ public class RootstechClassesController {
               }
           );
         })
+        .distinct()
         .toList());
   }
 
@@ -115,22 +130,35 @@ public class RootstechClassesController {
         .map(json -> getCalendarArray(extractCalendarItems(json, "2024")));
   }
 
-  @GetMapping({"/", "all"})
-  public Mono<JsonNode> fetchAll(ServerHttpResponse serverResponse) {
+  @GetMapping(
+      value = { "all", "csv" },
+      produces = CsvEncoder.TEXT_CSV_VALUE)
+  public Mono<JsonNode> fetchAllCsv(ServerHttpResponse serverResponse) {
     addDownloadHeader(serverResponse, "RootsTech2024_Printable_Schedule.csv");
+    return fetchAll();
+  }
+
+  @GetMapping(
+      value = { "all", "xlsx" },
+      produces = XlsxEncoder.APPLICATION_XLSX_VALUE)
+  public Mono<JsonNode> fetchAllXlsx(ServerHttpResponse serverResponse) {
+    addDownloadHeader(serverResponse, "RootsTech2024_Printable_Schedule.xlsx");
+    return fetchAll();
+  }
+
+  @GetMapping(
+      value = { "all", "json" },
+      produces = MediaType.APPLICATION_JSON_VALUE)
+  public Mono<JsonNode> fetchAllJson(ServerHttpResponse serverResponse) {
+    addDownloadHeader(serverResponse, "RootsTech2024_Printable_Schedule.json");
+    return fetchAll();
+  }
+
+  private Mono<JsonNode> fetchAll() {
     return Mono.zip(fetchSessions(), fetchMainStage())
         .map(tuple -> JsonUtils.arrayNodeOf(objectMapper, Stream.of(tuple.getT1(), tuple.getT2())
             .flatMap(JsonUtils::streamElements)
             .toList()));
-  }
-
-  static String asciiOnly(String str) {
-    return Normalizer.normalize(str.replace((char) 0x2018, '\'').replace((char) 0x2019, '\''), Normalizer.Form.NFD)
-        .replaceAll("[^\\x00-\\x7F]", "");
-  }
-
-  static void addDownloadHeader(ServerHttpResponse serverResponse, String filename) {
-    serverResponse.getHeaders().add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=%s;".formatted(filename));
   }
 }
 

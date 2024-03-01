@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<enunciate xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:noNamespaceSchemaLocation="https://enunciate.webcohesion.com/schemas/enunciate-2.15.0.xsd">
+
+  <title>RootsTech 2024 Classes</title>
+
+  <description package="com.craftmaster2190.rootstechclasses">
+    <![CDATA[
+      <pre>
+      <h1>RootsTech 2024 Classes</h1>
+      You are probably looking for the Classes XLSX Generator at one of:
+      <a href="/xlsx">/xlsx</a>
+      <a href="/csv">/csv</a>
+      <a href="/json">/json</a>
+
+      Not affiliated with <a href="//rootstech.org" target="_blank">RootsTech</a>.
+      Source code: <a href="https://github.com/craftmaster2190/rootstech-classes" target="_blank">https://github.com/craftmaster2190/rootstech-classes</a>
+      </pre>
+    ]]>
+  </description>
+
+  <api-classes>
+    <include pattern="com.craftmaster2190.rootstechclasses.**"/>
+  </api-classes>
+
+  <modules disabledByDefault="true">
+    <docs disabled="false"/>
+    <jackson disabled="false"/>
+    <spring-web disabled="false"/>
+    <swagger disabled="false"/>
+    <lombok disabled="false"/>
+  </modules>
+</enunciate>

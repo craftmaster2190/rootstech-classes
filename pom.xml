@@ -37,6 +37,16 @@
       <version>${jackson-bom.version}</version>
     </dependency>
     <dependency>
+      <groupId>org.apache.poi</groupId>
+      <artifactId>poi</artifactId>
+      <version>5.2.0</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.poi</groupId>
+      <artifactId>poi-ooxml</artifactId>
+      <version>5.2.0</version>
+    </dependency>
+    <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-test</artifactId>
       <scope>test</scope>
@@ -50,6 +60,32 @@
 
   <build>
     <plugins>
+      <!-- Enunciate docs -->
+      <plugin>
+        <groupId>com.webcohesion.enunciate</groupId>
+        <artifactId>enunciate-maven-plugin</artifactId>
+        <version>2.15.1</version>
+        <configuration>
+          <docsDir>${project.build.directory}/classes</docsDir>
+          <docsSubdir>static</docsSubdir>
+        </configuration>
+        <executions>
+          <execution>
+            <id>docs</id>
+            <goals>
+              <goal>docs</goal>
+            </goals>
+          </execution>
+        </executions>
+        <dependencies>
+          <dependency>
+            <groupId>com.webcohesion.enunciate</groupId>
+            <artifactId>enunciate-lombok</artifactId>
+            <version>2.15.1</version>
+          </dependency>
+        </dependencies>
+      </plugin>
+
       <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
