@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - 'master'
+permissions: write-all
 
 jobs:
   build:
@@ -11,6 +12,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'adopt'
+          java-version: '17'
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
@@ -22,7 +28,16 @@ jobs:
       - name: Build
         shell: bash
         run: |
-          maven clean install
-          docker build -t rootstech-classes
-          docker push craftmaster2190/rootstech-classes
+          mvn clean install --batch-mode \
+            --define 'org.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn'
+          docker build . --tag ghcr.io/craftmaster2190/rootstech-classes:latest --quiet
+
+      - name: Publish
+        shell: bash
+        run: |
+          docker push ghcr.io/craftmaster2190/rootstech-classes:latest --quiet
+
+      - name: Deploy
+        shell: bash
+        run: |
           curl -sS https://github.com/render-oss/render-cli/releases/download/v0.1.11/render-linux-x86_64 -o render-cli
