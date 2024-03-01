@@ -25,4 +25,4 @@ jobs:
           maven clean install
           docker build -t rootstech-classes
           docker push craftmaster2190/rootstech-classes
-          
+          curl -sS https://github.com/render-oss/render-cli/releases/download/v0.1.11/render-linux-x86_64 -o render-cli
