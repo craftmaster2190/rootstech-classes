@@ -8,7 +8,8 @@ public class CsvConfigurer {
 
   @Bean
   public CodecCustomizer myCustomCodecCustomizer(CsvEncoder csvEncoder) {
-    return configurer -> configurer.customCodecs().register(csvEncoder);
+    return configurer -> configurer.customCodecs()
+        .register(csvEncoder);
   }
 
 }

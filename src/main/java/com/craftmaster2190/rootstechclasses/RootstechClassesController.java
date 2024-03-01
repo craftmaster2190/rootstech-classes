@@ -2,11 +2,14 @@ package com.craftmaster2190.rootstechclasses;
 
 import com.craftmaster2190.rootstechclasses.util.JsonUtils;
 import com.fasterxml.jackson.databind.*;
+import java.text.Normalizer;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
@@ -16,7 +19,12 @@ import static com.craftmaster2190.rootstechclasses.util.JsonUtils.streamElements
 @RequiredArgsConstructor
 public class RootstechClassesController {
 
-  public static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("EEE',' MMM d h':'mm a");
+  @GetMapping("/health")
+  public void healthcheck() {
+  }
+
+  public static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("EEE',' MMM d");
+  public static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("h':'mm a");
   private final RootstechClassesFetcher rootstechClassesFetcher;
   private final ObjectMapper objectMapper;
 
@@ -49,13 +57,16 @@ public class RootstechClassesController {
           JsonNode item = calendarItem.at("/item");
           return item == null || !item.isEmpty();
         })
-        .sorted(Comparator.comparingLong(calendarItem -> calendarItem.at("/item/date")
-            .asLong()))
+        .sorted(Comparator.<JsonNode>comparingLong(calendarItem -> calendarItem.at("/item/date").asLong())
+            .thenComparing(calendarItem -> calendarItem.at("/item/classroomName").asText()))
         .map(calendarItem -> {
-          var time = DATE_TIME_FORMATTER.format(Instant.ofEpochMilli(calendarItem.at("/item/date")
+          var itemDateTime = Instant.ofEpochMilli(calendarItem.at("/item/date")
                   .asLong())
               .atZone(TimeZone.getTimeZone("America/Denver")
-                  .toZoneId()));
+                  .toZoneId());
+
+          var date = DATE_FORMATTER.format(itemDateTime);
+          var time = TIME_FORMATTER.format(itemDateTime);
           var title = calendarItem.at("/item/title")
               .asText();
           var speakers = streamElements(calendarItem.at("/item/creators")).map(
@@ -66,25 +77,26 @@ public class RootstechClassesController {
           var url = calendarItem.at("/item/url")
               .asText();
           var classroom = calendarItem.at("/item/classroomName")
-              .asText();
+              .asText(null);
           var location = calendarItem.at("/item/sessionLocation")
               .asText();
 
           var availableForViewingAfterConference = location.contains("Online")
-              || classroom.equals("Ballroom H")
-              || classroom.equals("Ballroom E")
-              || classroom.equals("Ballroom B")
-              || classroom.equals("Hall E");
+              || "Ballroom H".equals(classroom)
+              || "Ballroom E".equals(classroom)
+              || "Ballroom B".equals(classroom)
+              || "Hall E".equals(classroom);
 
           return JsonUtils.objectNodeOf(objectMapper, new LinkedHashMap<>() {
                 {
-                  put("time", time);
-                  put("title", title);
-                  put("speakers", speakers);
-                  put("classroom", classroom);
-                  put("location", location);
+                  put("Date", date);
+                  put("Time", time);
+                  put("Title", asciiOnly(title));
+                  put("Speakers", asciiOnly(speakers));
+                  put("Classroom", classroom);
+                  put("Location", location);
+                  put("Available for Viewing After Conference", availableForViewingAfterConference ? "Yes" : "No");
                   put("url", url);
-                  put("availableForViewingAfterConference", availableForViewingAfterConference ? "Yes" : "No");
                 }
               }
           );
@@ -103,13 +115,22 @@ public class RootstechClassesController {
         .map(json -> getCalendarArray(extractCalendarItems(json, "2024")));
   }
 
-  @GetMapping(value = "all")
-  public Mono<JsonNode> fetchAll() {
+  @GetMapping({"/", "all"})
+  public Mono<JsonNode> fetchAll(ServerHttpResponse serverResponse) {
+    addDownloadHeader(serverResponse, "RootsTech2024_Printable_Schedule.csv");
     return Mono.zip(fetchSessions(), fetchMainStage())
         .map(tuple -> JsonUtils.arrayNodeOf(objectMapper, Stream.of(tuple.getT1(), tuple.getT2())
             .flatMap(JsonUtils::streamElements)
             .toList()));
   }
 
+  static String asciiOnly(String str) {
+    return Normalizer.normalize(str.replace((char) 0x2018, '\'').replace((char) 0x2019, '\''), Normalizer.Form.NFD)
+        .replaceAll("[^\\x00-\\x7F]", "");
+  }
+
+  static void addDownloadHeader(ServerHttpResponse serverResponse, String filename) {
+    serverResponse.getHeaders().add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=%s;".formatted(filename));
+  }
 }
 

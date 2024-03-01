@@ -20,7 +20,7 @@ import reactor.core.publisher.Flux;
 @Component
 public class CsvEncoder implements Encoder<JsonNode> {
 
-  public static final MimeType TEXT_CSV = MimeType.valueOf("text/csv");
+  public static final MimeType TEXT_CSV = MimeType.valueOf("text/csv;charset=UTF-8");
 
   static <T> T invoke(Callable<T> invoke) {
     try {

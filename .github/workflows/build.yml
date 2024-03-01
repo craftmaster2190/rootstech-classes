@@ -40,4 +40,4 @@ jobs:
       - name: Deploy
         shell: bash
         run: |
-          curl -sS https://github.com/render-oss/render-cli/releases/download/v0.1.11/render-linux-x86_64 -o render-cli
+          curl -sS '${{secrets.DEPLOY_HOOK}}'
