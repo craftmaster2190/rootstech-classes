@@ -2,18 +2,18 @@
 <enunciate xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
            xsi:noNamespaceSchemaLocation="https://enunciate.webcohesion.com/schemas/enunciate-2.15.0.xsd">
 
-  <title>RootsTech 2024 Classes</title>
+  <title>RootsTech 2025 Classes</title>
 
   <description package="com.craftmaster2190.rootstechclasses">
     <![CDATA[
       <pre>
-      <h1>RootsTech 2024 Classes</h1>
-      You are probably looking for the Classes XLSX Generator at one of:
+      <h1>RootsTech 2025 Classes</h1>
+      You are probably looking for a printout of the classes for RootsTech 2025.
       <a href="/xlsx">/xlsx</a>
       <a href="/csv">/csv</a>
       <a href="/json">/json</a>
 
-      Not affiliated with <a href="//rootstech.org" target="_blank">RootsTech</a>.
+      Not affiliated with <a href="//rootstech.org" target="_blank">RootsTech</a> or <a href="//familysearch.org" target="_blank">FamilySearch</a>.
       Source code: <a href="https://github.com/craftmaster2190/rootstech-classes" target="_blank">https://github.com/craftmaster2190/rootstech-classes</a>
       </pre>
     ]]>

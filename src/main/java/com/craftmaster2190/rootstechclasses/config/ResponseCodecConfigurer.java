@@ -4,7 +4,7 @@ import org.springframework.boot.web.codec.CodecCustomizer;
 import org.springframework.context.annotation.*;
 
 @Configuration
-public class CsvConfigurer {
+public class ResponseCodecConfigurer {
 
   @Bean
   public CodecCustomizer myCustomCodecCustomizer(CsvEncoder csvEncoder, XlsxEncoder xlsxEncoder) {

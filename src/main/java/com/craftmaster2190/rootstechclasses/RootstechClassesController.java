@@ -4,8 +4,9 @@ import com.craftmaster2190.rootstechclasses.config.*;
 import com.craftmaster2190.rootstechclasses.util.JsonUtils;
 import com.fasterxml.jackson.databind.*;
 import java.text.Normalizer;
-import java.time.Instant;
-import java.time.format.DateTimeFormatter;
+import java.time.*;
+import java.time.format.*;
+import java.time.temporal.ChronoField;
 import java.util.*;
 import java.util.stream.*;
 import lombok.RequiredArgsConstructor;
@@ -25,13 +26,8 @@ public class RootstechClassesController {
   private final RootstechClassesFetcher rootstechClassesFetcher;
   private final ObjectMapper objectMapper;
 
-  private static JsonNode extractCalendarItems(JsonNode json, String stageTitle) {
-    return streamElements(json.at("/data/CalendarDetail/stages"))
-        .filter(jsonStage -> Objects.equals(jsonStage.get("title")
-            .asText(), stageTitle))
-        .findAny()
-        .orElseThrow(() -> new IllegalStateException("No `" + stageTitle + "` stages.title element"))
-        .get("calendarItems");
+  private static JsonNode extractCalendarItems(JsonNode json) {
+    return json.at("/data/CalendarDetail/stages/0/calendarItems");
   }
 
   static String asciiOnly(String str) {
@@ -49,15 +45,15 @@ public class RootstechClassesController {
   public void healthcheck() {
   }
 
-  @GetMapping("sessions-raw")
+  @GetMapping(value = "sessions-raw", produces = MediaType.APPLICATION_JSON_VALUE)
   public Mono<JsonNode> fetchSessionsRaw() {
     return rootstechClassesFetcher.fetchSessions();
   }
 
-  @GetMapping("sessions")
+  @GetMapping(value = "sessions", produces = MediaType.APPLICATION_JSON_VALUE)
   public Mono<JsonNode> fetchSessions() {
     return fetchSessionsRaw()
-        .map(json -> getCalendarArray(extractCalendarItems(json, "Sessions")));
+        .map(json -> getCalendarArray(extractCalendarItems(json)));
   }
 
   private JsonNode getCalendarArray(JsonNode calendarItems) {
@@ -96,10 +92,10 @@ public class RootstechClassesController {
               .asText("");
 
           var availableForViewingAfterConference = location.contains("Online")
-              || "Ballroom H".equals(classroom)
-              || "Ballroom E".equals(classroom)
-              || "Ballroom B".equals(classroom)
-              || "Hall E".equals(classroom);
+                                                   || "Ballroom H".equals(classroom)
+                                                   || "Ballroom E".equals(classroom)
+                                                   || "Ballroom B".equals(classroom)
+                                                   || "Hall E".equals(classroom);
 
           return JsonUtils.objectNodeOf(objectMapper, new LinkedHashMap<>() {
                 {
@@ -119,22 +115,22 @@ public class RootstechClassesController {
         .toList());
   }
 
-  @GetMapping("mainstage-raw")
+  @GetMapping(value = "mainstage-raw", produces = MediaType.APPLICATION_JSON_VALUE)
   public Mono<JsonNode> fetchMainStageRaw() {
     return rootstechClassesFetcher.fetchMainStageEvents();
   }
 
-  @GetMapping("mainstage")
+  @GetMapping(value = "mainstage", produces = MediaType.APPLICATION_JSON_VALUE)
   public Mono<JsonNode> fetchMainStage() {
     return fetchMainStageRaw()
-        .map(json -> getCalendarArray(extractCalendarItems(json, "2024")));
+        .map(json -> getCalendarArray(extractCalendarItems(json)));
   }
 
   @GetMapping(
       value = { "all", "csv" },
       produces = CsvEncoder.TEXT_CSV_VALUE)
   public Mono<JsonNode> fetchAllCsv(ServerHttpResponse serverResponse) {
-    addDownloadHeader(serverResponse, "RootsTech2024_Printable_Schedule.csv");
+    addDownloadHeader(serverResponse, "RootsTech2025_Printable_Schedule.csv");
     return fetchAll();
   }
 
@@ -142,7 +138,7 @@ public class RootstechClassesController {
       value = { "all", "xlsx" },
       produces = XlsxEncoder.APPLICATION_XLSX_VALUE)
   public Mono<JsonNode> fetchAllXlsx(ServerHttpResponse serverResponse) {
-    addDownloadHeader(serverResponse, "RootsTech2024_Printable_Schedule.xlsx");
+    addDownloadHeader(serverResponse, "RootsTech2025_Printable_Schedule.xlsx");
     return fetchAll();
   }
 
@@ -150,7 +146,7 @@ public class RootstechClassesController {
       value = { "all", "json" },
       produces = MediaType.APPLICATION_JSON_VALUE)
   public Mono<JsonNode> fetchAllJson(ServerHttpResponse serverResponse) {
-    addDownloadHeader(serverResponse, "RootsTech2024_Printable_Schedule.json");
+    addDownloadHeader(serverResponse, "RootsTech2025_Printable_Schedule.json");
     return fetchAll();
   }
 
@@ -158,7 +154,27 @@ public class RootstechClassesController {
     return Mono.zip(fetchSessions(), fetchMainStage())
         .map(tuple -> JsonUtils.arrayNodeOf(objectMapper, Stream.of(tuple.getT1(), tuple.getT2())
             .flatMap(JsonUtils::streamElements)
+            .sorted(Comparator.comparing(RootstechClassesController::parseDateFromCalendarItem))
             .toList()));
+  }
+
+  private static ZonedDateTime parseDateFromCalendarItem(JsonNode json) {
+    var date = json.at("/Date")
+        .asText() + " " + json.at("/Time")
+        .asText();
+
+    // "Date": "Sat, Mar 8",
+    //    "Time": "1:30 PM",
+    ZoneId zoneId = TimeZone.getTimeZone("America/Denver").toZoneId();
+    var parse = new DateTimeFormatterBuilder()
+        .appendPattern("EEE',' MMM d h':'mm a")
+        .parseDefaulting(ChronoField.YEAR, 2025)
+        .parseDefaulting(ChronoField.SECOND_OF_MINUTE, 0)
+        .parseDefaulting(ChronoField.NANO_OF_SECOND, 0)
+        .toFormatter()
+        .withZone(zoneId)
+        .parse(date, ZonedDateTime::from);
+    return parse;
   }
 }
 

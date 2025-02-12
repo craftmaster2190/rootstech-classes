@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.*;
 import jakarta.annotation.PostConstruct;
 import java.net.URI;
-import java.time.Instant;
+import java.time.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -25,9 +25,9 @@ public class RootstechClassesFetcher {
     this.webClient = webClient;
     this.objectMapper = objectMapper;
     cachedSessionsCall = webClientCall(
-        "https://cms-z.api.familysearch.org/rootstech/api/graphql/delivery/conference?operationName=CalendarDetail&variables=%7B%22profileImage_crop%22%3Atrue%2C%22profileImage_height%22%3A250%2C%22profileImage_width%22%3A250%2C%22promoImage_crop%22%3Afalse%2C%22promoImage_height%22%3A288%2C%22promoImage_width%22%3A512%2C%22thumbnailImage_crop%22%3Afalse%2C%22thumbnailImage_height%22%3A288%2C%22thumbnailImage_width%22%3A512%2C%22id%22%3A%22%2Fcalendar%2Fsessions%22%7D&extensions=%7B%22persistedQuery%22%3A%7B%22version%22%3A1%2C%22sha256Hash%22%3A%223d0e63fb4f8bf14ed5c2c5e58c50e283e8b05e4adc29bcad93007b8ecb75eb9b%22%7D%7D");
+        "https://cms-z.api.familysearch.org/rootstech/api/graphql/delivery/conference?operationName=CalendarDetail&variables=%7B%22profileImage_crop%22%3Atrue%2C%22profileImage_height%22%3A250%2C%22profileImage_width%22%3A250%2C%22promoImage_crop%22%3Afalse%2C%22promoImage_height%22%3A288%2C%22promoImage_width%22%3A512%2C%22thumbnailImage_crop%22%3Afalse%2C%22thumbnailImage_height%22%3A288%2C%22thumbnailImage_width%22%3A512%2C%22id%22%3A%22%2Fcalendar%2Fsessions%22%7D&extensions=%7B%22persistedQuery%22%3A%7B%22version%22%3A1%2C%22sha256Hash%22%3A%22b87427ca63a55636901cbb17e71dd57e74f7e81cc890feb6468227c97d7123de%22%7D%7D");
     cachedMainStageEventsCall = webClientCall(
-        "https://cms-z.api.familysearch.org/rootstech/api/graphql/delivery/conference?operationName=CalendarDetail&variables=%7B%22profileImage_crop%22%3Atrue%2C%22profileImage_height%22%3A250%2C%22profileImage_width%22%3A250%2C%22promoImage_crop%22%3Afalse%2C%22promoImage_height%22%3A288%2C%22promoImage_width%22%3A512%2C%22thumbnailImage_crop%22%3Afalse%2C%22thumbnailImage_height%22%3A288%2C%22thumbnailImage_width%22%3A512%2C%22id%22%3A%22%2Fcalendar%2Fmain-stage%22%7D&extensions=%7B%22persistedQuery%22%3A%7B%22version%22%3A1%2C%22sha256Hash%22%3A%223d0e63fb4f8bf14ed5c2c5e58c50e283e8b05e4adc29bcad93007b8ecb75eb9b%22%7D%7D");
+        "https://cms-z.api.familysearch.org/rootstech/api/graphql/delivery/conference?operationName=CalendarDetail&variables=%7B%22profileImage_crop%22%3Atrue%2C%22profileImage_height%22%3A250%2C%22profileImage_width%22%3A250%2C%22promoImage_crop%22%3Afalse%2C%22promoImage_height%22%3A288%2C%22promoImage_width%22%3A512%2C%22thumbnailImage_crop%22%3Afalse%2C%22thumbnailImage_height%22%3A288%2C%22thumbnailImage_width%22%3A512%2C%22id%22%3A%22%2Fcalendar%2Fmain-stage%22%7D&extensions=%7B%22persistedQuery%22%3A%7B%22version%22%3A1%2C%22sha256Hash%22%3A%22b87427ca63a55636901cbb17e71dd57e74f7e81cc890feb6468227c97d7123de%22%7D%7D");
   }
 
   private Mono<JsonNode> webClientCall(String graphqlUrl) {
@@ -57,7 +57,7 @@ public class RootstechClassesFetcher {
 
           return clientResponse.bodyToMono(String.class)
               .doOnNext(str ->
-                  str.toString());
+                  str.toString()); // For debugging
         })
         //        .bodyToMono(String.class)
         .doOnNext(i -> log.info("Fetched at {}", Instant.now()))
@@ -69,7 +69,8 @@ public class RootstechClassesFetcher {
           catch (JsonProcessingException e) {
             return Mono.error(new RuntimeException("Unable to parse: " + str, e));
           }
-        });
+        })
+        .cache(Duration.ofMinutes(15));
   }
 
   public Mono<JsonNode> fetchSessions() {
