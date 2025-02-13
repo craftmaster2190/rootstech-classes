@@ -25,6 +25,9 @@ public class RootstechClassesController {
   public static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("h':'mm a");
   private final RootstechClassesFetcher rootstechClassesFetcher;
   private final ObjectMapper objectMapper;
+  private final Comparator<JsonNode> SORT = Comparator.comparing(RootstechClassesController::parseDateFromCalendarItem)
+      .thenComparing(calendarItem -> calendarItem.get("Location").asText(""))
+      .thenComparing(calendarItem -> calendarItem.get("Classroom").asText(""));
 
   private static JsonNode extractCalendarItems(JsonNode json) {
     return json.at("/data/CalendarDetail/stages/0/calendarItems");
@@ -154,7 +157,7 @@ public class RootstechClassesController {
     return Mono.zip(fetchSessions(), fetchMainStage())
         .map(tuple -> JsonUtils.arrayNodeOf(objectMapper, Stream.of(tuple.getT1(), tuple.getT2())
             .flatMap(JsonUtils::streamElements)
-            .sorted(Comparator.comparing(RootstechClassesController::parseDateFromCalendarItem))
+            .sorted(SORT)
             .toList()));
   }
 
