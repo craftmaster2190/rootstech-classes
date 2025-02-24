@@ -1,2 +1,3 @@
 server:
   shutdown: graceful
+  port: ${PORT:8080}
