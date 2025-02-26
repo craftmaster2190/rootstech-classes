@@ -1,13 +1,11 @@
 package com.craftmaster2190.rootstechclasses.config;
 
-import com.craftmaster2190.rootstechclasses.util.JsonUtils;
+import com.craftmaster2190.rootstechclasses.util.*;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.dataformat.csv.*;
 import java.io.ByteArrayOutputStream;
 import java.util.*;
-import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicReference;
 import org.reactivestreams.Publisher;
 import org.springframework.core.ResolvableType;
@@ -17,20 +15,13 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.MimeType;
 import reactor.core.publisher.Flux;
 
+import static com.craftmaster2190.rootstechclasses.util.ExceptionalUtils.invoke;
+
 @Component
 public class CsvEncoder implements Encoder<JsonNode> {
 
   public static final String TEXT_CSV_VALUE = "text/csv";
   public static final MimeType TEXT_CSV = MimeType.valueOf(TEXT_CSV_VALUE);
-
-  static <T> T invoke(Callable<T> invoke) {
-    try {
-      return invoke.call();
-    }
-    catch (Exception e) {
-      throw new RuntimeException(e);
-    }
-  }
 
   @Override
   public boolean canEncode(ResolvableType elementType, MimeType mimeType) {
@@ -42,10 +33,7 @@ public class CsvEncoder implements Encoder<JsonNode> {
   public Flux<DataBuffer> encode(Publisher<? extends JsonNode> inputStream, DataBufferFactory bufferFactory, ResolvableType elementType, MimeType mimeType, Map<String, Object> hints) {
     return Flux.from(inputStream)
         .map(jsonNode -> {
-          if (!jsonNode.isArray() || !(jsonNode instanceof ArrayNode)) {
-            throw new IllegalStateException("json was not an array!");
-          }
-          var array = (ArrayNode) jsonNode;
+          var array = JsonUtils.toArrayNodeOrThrow(jsonNode);
 
           var bytes = new ByteArrayOutputStream();
           CsvMapper csvMapper = CsvMapper.csvBuilder()
@@ -66,6 +54,8 @@ public class CsvEncoder implements Encoder<JsonNode> {
                         .with(csvSchemaBuilder.build());
                     csvSchemaWriter.setPlain(invoke(() -> objectWriter.writeValues(bytes)));
                   }
+                  // Does not need try-with-resources because the writer is closed in the finally block because it is created lazily
+                  //noinspection resource
                   invoke(() -> csvSchemaWriter.getPlain()
                       .write(row));
                 });
@@ -76,7 +66,6 @@ public class CsvEncoder implements Encoder<JsonNode> {
               if (io != null) {
                 io.close();
               }
-              return null;
             });
           }
 

@@ -1,15 +1,13 @@
 package com.craftmaster2190.rootstechclasses;
 
 import com.craftmaster2190.rootstechclasses.config.*;
-import com.craftmaster2190.rootstechclasses.util.JsonUtils;
+import com.craftmaster2190.rootstechclasses.util.*;
 import com.fasterxml.jackson.databind.*;
 import java.text.Normalizer;
-import java.time.*;
-import java.time.format.*;
-import java.time.temporal.ChronoField;
 import java.util.*;
 import java.util.stream.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.web.bind.annotation.*;
@@ -17,15 +15,14 @@ import reactor.core.publisher.Mono;
 
 import static com.craftmaster2190.rootstechclasses.util.JsonUtils.streamElements;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 public class RootstechClassesController {
 
-  public static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("EEE',' MMM d");
-  public static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("h':'mm a");
   private final RootstechClassesFetcher rootstechClassesFetcher;
   private final ObjectMapper objectMapper;
-  private final Comparator<JsonNode> SORT = Comparator.comparing(RootstechClassesController::parseDateFromCalendarItem)
+  private final Comparator<JsonNode> SORT = Comparator.comparing(DateTimeUtils::parseDateFromCalendarItem)
       .thenComparing(calendarItem -> calendarItem.get("Location").asText(""))
       .thenComparing(calendarItem -> calendarItem.get("Classroom").asText(""));
 
@@ -68,18 +65,15 @@ public class RootstechClassesController {
           JsonNode item = calendarItem.at("/item");
           return item == null || !item.isEmpty();
         })
-        .sorted(Comparator.<JsonNode>comparingLong(calendarItem -> calendarItem.at("/item/date")
+        .sorted(Comparator.<JsonNode>comparingLong(calendarItem -> calendarItem.at("/date")
                 .asLong())
             .thenComparing(calendarItem -> calendarItem.at("/item/classroomName")
                 .asText()))
         .map(calendarItem -> {
-          var itemDateTime = Instant.ofEpochMilli(calendarItem.at("/item/date")
-                  .asLong())
-              .atZone(TimeZone.getTimeZone("America/Denver")
-                  .toZoneId());
+          var dateTime = DateTimeUtils.parseUnixEpochMST(calendarItem.at("/date").asLong());
 
-          var date = DATE_FORMATTER.format(itemDateTime);
-          var time = TIME_FORMATTER.format(itemDateTime);
+          var date = DateTimeUtils.DATE_FORMATTER.format(dateTime);
+          var time = DateTimeUtils.TIME_FORMATTER.format(dateTime);
           var title = calendarItem.at("/item/title")
               .asText();
           var speakers = streamElements(calendarItem.at("/item/creators")).map(
@@ -94,11 +88,7 @@ public class RootstechClassesController {
           var location = calendarItem.at("/item/sessionLocation")
               .asText("");
 
-          var availableForViewingAfterConference = location.contains("Online")
-                                                   || "Ballroom H".equals(classroom)
-                                                   || "Ballroom E".equals(classroom)
-                                                   || "Ballroom B".equals(classroom)
-                                                   || "Hall E".equals(classroom);
+          var availableForViewingAfterConference = !(location.contains("In Person") && !location.contains("Online"));
 
           return JsonUtils.objectNodeOf(objectMapper, new LinkedHashMap<>() {
                 {
@@ -161,23 +151,5 @@ public class RootstechClassesController {
             .toList()));
   }
 
-  private static ZonedDateTime parseDateFromCalendarItem(JsonNode json) {
-    var date = json.at("/Date")
-        .asText() + " " + json.at("/Time")
-        .asText();
-
-    // "Date": "Sat, Mar 8",
-    //    "Time": "1:30 PM",
-    ZoneId zoneId = TimeZone.getTimeZone("America/Denver").toZoneId();
-    var parse = new DateTimeFormatterBuilder()
-        .appendPattern("EEE',' MMM d h':'mm a")
-        .parseDefaulting(ChronoField.YEAR, 2025)
-        .parseDefaulting(ChronoField.SECOND_OF_MINUTE, 0)
-        .parseDefaulting(ChronoField.NANO_OF_SECOND, 0)
-        .toFormatter()
-        .withZone(zoneId)
-        .parse(date, ZonedDateTime::from);
-    return parse;
-  }
 }
 

@@ -41,27 +41,8 @@ public class RootstechClassesFetcher {
         .header("Host", "cms-z.api.familysearch.org")
         .header("Referer", "https://www.familysearch.org/")
         .header("Origin", "https://www.familysearch.org/")
-        .exchangeToMono(clientResponse -> {
-          var requestHeaders = clientResponse.request()
-              .getHeaders()
-              .toString();
-
-          var mediaType = clientResponse.headers()
-              .contentType();
-          var contentLength = clientResponse.headers()
-              .contentLength();
-
-          var responseHeaders = clientResponse.headers()
-              .asHttpHeaders()
-              .toString();
-
-          return clientResponse.bodyToMono(String.class)
-              .doOnNext(str ->
-                  str.toString()); // For debugging
-        })
-        //        .bodyToMono(String.class)
+        .exchangeToMono(clientResponse -> clientResponse.bodyToMono(String.class))
         .doOnNext(i -> log.info("Fetched at {}", Instant.now()))
-        //        .cache(Duration.of(1, MINUTES))
         .flatMap((str) -> {
           try {
             return Mono.just(this.objectMapper.readTree(str));
@@ -82,7 +63,6 @@ public class RootstechClassesFetcher {
 
   @PostConstruct
   public void initCache() {
-    log.info("init");
-    fetchSessions().block();
+    fetchSessions().block(); // Self test on startup
   }
 }
