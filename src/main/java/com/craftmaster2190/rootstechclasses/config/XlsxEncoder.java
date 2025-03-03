@@ -7,6 +7,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.poi.common.usermodel.HyperlinkType;
 import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.reactivestreams.Publisher;
 import org.springframework.core.ResolvableType;
@@ -98,6 +99,9 @@ public class XlsxEncoder implements Encoder<JsonNode> {
             for (int columnIndex = 0; columnIndex < fieldToColumnIndexMap.size(); columnIndex++) {
               sheet.autoSizeColumn(columnIndex);
             }
+
+            sheet.setAutoFilter(new CellRangeAddress(0, 0, 0, fieldToColumnIndexMap.size()));
+            sheet.createFreezePane(0, 1);
 
             invoke(() -> workbook.write(bytes));
           }

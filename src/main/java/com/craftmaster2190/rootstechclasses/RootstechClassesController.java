@@ -5,6 +5,7 @@ import com.craftmaster2190.rootstechclasses.util.*;
 import com.fasterxml.jackson.databind.*;
 import java.text.Normalizer;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -145,10 +146,21 @@ public class RootstechClassesController {
 
   private Mono<JsonNode> fetchAll() {
     return Mono.zip(fetchSessions(), fetchMainStage())
-        .map(tuple -> JsonUtils.arrayNodeOf(objectMapper, Stream.of(tuple.getT1(), tuple.getT2())
-            .flatMap(JsonUtils::streamElements)
-            .sorted(SORT)
-            .toList()));
+        .map(tuple -> {
+          var duplicates = new HashSet<JsonNode>(); // Not thread-safe, do not parallelize the following lines.
+          var results = Stream.of(tuple.getT1(), tuple.getT2())
+              .flatMap(JsonUtils::streamElements)
+              .sorted(SORT)
+              .filter(json -> {
+                boolean isDistinct = duplicates.add(json);
+                if (!isDistinct) {
+                  log.debug("Removing duplicate: {}", json);
+                }
+                return isDistinct;
+              })
+              .toList();
+          return JsonUtils.arrayNodeOf(objectMapper, results);
+        });
   }
 
 }

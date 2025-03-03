@@ -20,7 +20,7 @@ public class StreamUtils {
     }
     return stream(Spliterators.spliteratorUnknownSize(iterator, 0));
   }
-  
+
   public static <T> Stream<T> stream(@Nullable Spliterator<T> spliterator) {
     if (spliterator == null) {
       return Stream.empty();
