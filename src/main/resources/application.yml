@@ -1,3 +1,8 @@
 server:
   shutdown: graceful
   port: ${PORT:8080}
+
+spring:
+  mvc:
+    favicon:
+      enabled: false

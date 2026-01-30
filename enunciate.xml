@@ -2,13 +2,13 @@
 <enunciate xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
            xsi:noNamespaceSchemaLocation="https://enunciate.webcohesion.com/schemas/enunciate-2.15.0.xsd">
 
-  <title>RootsTech 2026 Classes</title>
+  <title>RootsTech XXXX Classes</title>
 
   <description package="com.craftmaster2190.rootstechclasses">
     <![CDATA[
       <pre>
-      <h1>RootsTech 2026 Classes</h1>
-      You are probably looking for a printout of the classes for RootsTech 2026.
+      <h1>RootsTech XXXX Classes</h1>
+      You are probably looking for a printout of the classes for RootsTech XXXX.
       <a href="/xlsx">/xlsx</a>
       <a href="/csv">/csv</a>
       <a href="/json">/json</a>
@@ -16,6 +16,15 @@
       Not affiliated with <a href="//rootstech.org" target="_blank">RootsTech</a> or <a href="//familysearch.org" target="_blank">FamilySearch</a>.
       Source code: <a href="https://github.com/craftmaster2190/rootstech-classes" target="_blank">https://github.com/craftmaster2190/rootstech-classes</a>
       </pre>
+      <script>
+        // Kind of a hack: fetch the year from the API and replace all instances of XXXX in the page
+        fetch('/rootstech-year')
+          .then(response => response.text())
+          .then(year => {
+            document.body.innerHTML = document.body.innerHTML.replaceAll('XXXX', year);
+            document.title = document.title.replace('XXXX', year);
+          });
+      </script>
     ]]>
   </description>
 

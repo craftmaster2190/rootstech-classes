@@ -56,7 +56,7 @@ public class XlsxEncoder implements Encoder<JsonNode> {
 
           var bytes = new ByteArrayOutputStream();
           Workbook workbook = new XSSFWorkbook();
-          Sheet sheet = workbook.createSheet("RootsTech Classes 2026"); // TODO Move this somewhere else?
+          Sheet sheet = workbook.createSheet("RootsTech Classes " + CurrentYear.get()); // TODO Move this somewhere else?
           AtomicInteger currentRowIndex = new AtomicInteger();
           Map<String, Integer> fieldToColumnIndexMap = new HashMap<>();
 

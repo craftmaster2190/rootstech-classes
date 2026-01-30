@@ -1,5 +1,6 @@
 package com.craftmaster2190.rootstechclasses.util;
 
+import com.craftmaster2190.rootstechclasses.config.CurrentYear;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.time.*;
 import java.time.format.*;
@@ -13,7 +14,7 @@ public class DateTimeUtils {
       .toZoneId();
   public static final DateTimeFormatter WEEKDAY_MONTH_DAY_TIME_PARSER = new DateTimeFormatterBuilder()
       .appendPattern("EEE',' MMM d h':'mm a")
-      .parseDefaulting(ChronoField.YEAR, 2026)
+      .parseDefaulting(ChronoField.YEAR, CurrentYear.get())
       .parseDefaulting(ChronoField.SECOND_OF_MINUTE, 0)
       .parseDefaulting(ChronoField.NANO_OF_SECOND, 0)
       .toFormatter()

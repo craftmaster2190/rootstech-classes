@@ -123,7 +123,7 @@ public class RootstechClassesController {
       value = { "all", "csv" },
       produces = CsvEncoder.TEXT_CSV_VALUE)
   public Mono<JsonNode> fetchAllCsv(ServerHttpResponse serverResponse) {
-    addDownloadHeader(serverResponse, "RootsTech2026_Printable_Schedule.csv");
+    addDownloadHeader(serverResponse, "RootsTech%s_Printable_Schedule.csv".formatted(CurrentYear.get()));
     return fetchAll();
   }
 
@@ -131,7 +131,7 @@ public class RootstechClassesController {
       value = { "all", "xlsx" },
       produces = XlsxEncoder.APPLICATION_XLSX_VALUE)
   public Mono<JsonNode> fetchAllXlsx(ServerHttpResponse serverResponse) {
-    addDownloadHeader(serverResponse, "RootsTech2026_Printable_Schedule.xlsx");
+    addDownloadHeader(serverResponse, "RootsTech%s_Printable_Schedule.xlsx".formatted(CurrentYear.get()));
     return fetchAll();
   }
 
@@ -139,7 +139,7 @@ public class RootstechClassesController {
       value = { "all", "json" },
       produces = MediaType.APPLICATION_JSON_VALUE)
   public Mono<JsonNode> fetchAllJson(ServerHttpResponse serverResponse) {
-    addDownloadHeader(serverResponse, "RootsTech2026_Printable_Schedule.json");
+    addDownloadHeader(serverResponse, "RootsTech%s_Printable_Schedule.json".formatted(CurrentYear.get()));
     return fetchAll();
   }
 
