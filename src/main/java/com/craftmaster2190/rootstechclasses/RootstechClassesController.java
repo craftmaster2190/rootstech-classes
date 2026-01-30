@@ -5,7 +5,6 @@ import com.craftmaster2190.rootstechclasses.util.*;
 import com.fasterxml.jackson.databind.*;
 import java.text.Normalizer;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -124,7 +123,7 @@ public class RootstechClassesController {
       value = { "all", "csv" },
       produces = CsvEncoder.TEXT_CSV_VALUE)
   public Mono<JsonNode> fetchAllCsv(ServerHttpResponse serverResponse) {
-    addDownloadHeader(serverResponse, "RootsTech2025_Printable_Schedule.csv");
+    addDownloadHeader(serverResponse, "RootsTech2026_Printable_Schedule.csv");
     return fetchAll();
   }
 
@@ -132,7 +131,7 @@ public class RootstechClassesController {
       value = { "all", "xlsx" },
       produces = XlsxEncoder.APPLICATION_XLSX_VALUE)
   public Mono<JsonNode> fetchAllXlsx(ServerHttpResponse serverResponse) {
-    addDownloadHeader(serverResponse, "RootsTech2025_Printable_Schedule.xlsx");
+    addDownloadHeader(serverResponse, "RootsTech2026_Printable_Schedule.xlsx");
     return fetchAll();
   }
 
@@ -140,7 +139,7 @@ public class RootstechClassesController {
       value = { "all", "json" },
       produces = MediaType.APPLICATION_JSON_VALUE)
   public Mono<JsonNode> fetchAllJson(ServerHttpResponse serverResponse) {
-    addDownloadHeader(serverResponse, "RootsTech2025_Printable_Schedule.json");
+    addDownloadHeader(serverResponse, "RootsTech2026_Printable_Schedule.json");
     return fetchAll();
   }
 

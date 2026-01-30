@@ -13,7 +13,7 @@ public class DateTimeUtils {
       .toZoneId();
   public static final DateTimeFormatter WEEKDAY_MONTH_DAY_TIME_PARSER = new DateTimeFormatterBuilder()
       .appendPattern("EEE',' MMM d h':'mm a")
-      .parseDefaulting(ChronoField.YEAR, 2025)
+      .parseDefaulting(ChronoField.YEAR, 2026)
       .parseDefaulting(ChronoField.SECOND_OF_MINUTE, 0)
       .parseDefaulting(ChronoField.NANO_OF_SECOND, 0)
       .toFormatter()
