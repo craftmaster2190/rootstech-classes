@@ -24,6 +24,6 @@ public class LoggingWebFilter implements WebFilter {
 
     log.info(">>> {} Accept: {} User-Agent: {}", requestToString, accept, userAgent);
     return webFilterChain.filter(serverWebExchange).doFinally(ignored ->
-          log.info("<<< {} Finished after: {}", requestToString, stopwatch));
+          log.info("<<< {} {} Finished after: {}", requestToString, serverWebExchange.getResponse().getStatusCode(), stopwatch));
   }
 }

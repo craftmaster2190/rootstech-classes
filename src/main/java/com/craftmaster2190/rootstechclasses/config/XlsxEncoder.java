@@ -100,7 +100,7 @@ public class XlsxEncoder implements Encoder<JsonNode> {
               sheet.autoSizeColumn(columnIndex);
             }
 
-            sheet.setAutoFilter(new CellRangeAddress(0, 0, 0, fieldToColumnIndexMap.size()));
+            sheet.setAutoFilter(new CellRangeAddress(0, 0, 0, fieldToColumnIndexMap.size() - 1));
             sheet.createFreezePane(0, 1);
 
             invoke(() -> workbook.write(bytes));

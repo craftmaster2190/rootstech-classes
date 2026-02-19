@@ -3,8 +3,11 @@ package com.craftmaster2190.rootstechclasses;
 import com.craftmaster2190.rootstechclasses.config.*;
 import com.craftmaster2190.rootstechclasses.util.*;
 import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.text.Normalizer;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Predicate;
 import java.util.stream.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -57,7 +60,7 @@ public class RootstechClassesController {
   }
 
   private JsonNode getCalendarArray(JsonNode calendarItems) {
-    return JsonUtils.arrayNodeOf(objectMapper, streamElements(calendarItems)
+    List<ObjectNode> list = streamElements(calendarItems)
         .filter(calendarItem -> {
           if (calendarItem == null) {
             return false;
@@ -83,8 +86,10 @@ public class RootstechClassesController {
               .collect(Collectors.joining(", "));
           var url = calendarItem.at("/item/url")
               .asText();
-          var classroom = calendarItem.at("/item/classroomName")
-              .asText(null);
+          var classroom = Optional.ofNullable(calendarItem.at("/item/classroomName")
+              .asText(null))
+              .filter(Predicate.not("Remote"::equals)) // Filter out "Remote" classroom since it is redundant with the Location field containing "Online".
+              .orElse(null);
           var location = calendarItem.at("/item/sessionLocation")
               .asText("");
 
@@ -105,7 +110,19 @@ public class RootstechClassesController {
           );
         })
         .distinct()
-        .toList());
+        .toList();
+
+    // If the current item has a duplicate that is scheduled earlier, override the sessionLocation to be Online Replay.
+    Set<String> duplicateUrls = ConcurrentHashMap.newKeySet(list.size());
+    list.forEach(calendarItem -> {
+      var isReplay = !duplicateUrls.add(calendarItem.get("url").asText());
+      if (isReplay) {
+        calendarItem.put("Location", "Online Replay");
+        calendarItem.remove("Classroom");
+      }
+    });
+
+    return JsonUtils.arrayNodeOf(objectMapper, list);
   }
 
   @GetMapping(value = "mainstage-raw", produces = MediaType.APPLICATION_JSON_VALUE)
